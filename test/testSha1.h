@@ -17,6 +17,6 @@
 #ifndef TESTSHA1_H
 #define TESTSHA1_H
 
-#include "../sha1.h"
+#include "../src/sha1.h"
 
 #endif
