@@ -18,5 +18,13 @@
 #define TESTSHA1_H
 
 #include "../src/sha1.h"
+// printf
+#include <stdio.h>
+
+struct sha1TestVec
+{
+    char *p_input;
+    struct hash expectedResult;
+};
 
 #endif
