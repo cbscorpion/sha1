@@ -17,8 +17,21 @@
 #ifndef SHA1_H
 #define SHA1_H
 
-// UINT32_C
+// UINT32_C, UINT64_C
 #include <stdint.h>
+// malloc
+#include <stdlib.h>
+// memcpy
+#include <string.h>
+
+// error code
+#define E_DIGEST_MEMALLOC   0x0000000A
+
+struct buff
+{
+    char    *p_data;
+    uint32_t l_data;
+};
 
 struct hash 
 {
@@ -29,6 +42,6 @@ struct hash
 	uint32_t e;
 };
 
-extern int sha1Digest(char *p_input, struct hash *p_result);
+extern int sha1Digest(struct buff *p_input, struct hash *p_result);
 
 #endif

@@ -27,6 +27,11 @@
 #define K_20_39     UINT32_C(0x6ED9EBA1)
 #define K_40_59     UINT32_C(0x8F1BBCDC)
 #define K_60_79     UINT32_C(0xCA62C1D6)
+// constants to replace mod with and
+#define MOD_NUM_4   UINT32_C(0x00000003)
+#define MOD_NUM_16  UINT32_C(0x0000000F)
+#define MOD_NUM_64  UINT64_C(0x0000003F)
+#define MOD_BIT_32  UINT64_C(0xFFFFFFFF)
 
 // macros for f-functions
 #define F_00_19(mB, mC, mD) (mD ^ (mB & (mC ^ mD)))
@@ -58,50 +63,102 @@
     GEN_BLOCK(i)                           \
     ROUND_PROCESSING(mA, mB, mC, mD, mE, F_REST(mB, mC, mD),  K_60_79, i)
 
-// function prototypes
-static inline void sha1Pad(char *p_input, uint32_t *p_preprocessedBlocks);
-static void sha1Update(char *p_currInput, struct hash *p_hashState);
+// function prototype
+static void sha1Update(uint32_t *p_currChunk, struct hash *p_hashState);
 
 /**
  * Function: sha1Digest
- * 
- * TODO: add doc here
  */
 int sha1Digest
 (
-    char        *p_input, 
+    struct buff *p_input, 
     struct hash *p_result
 )
 {
-    int         err = 0;
-    struct hash hashState;
-    // initialize state variables with constants
-    hashState.a = SHA1_IV_0;
-    hashState.b = SHA1_IV_1;
-    hashState.c = SHA1_IV_2;
-    hashState.d = SHA1_IV_3;
-    hashState.e = SHA1_IV_4;
+    uint32_t    iterationsNeeded,
+                i;
+    uint64_t    temp,
+                inputLengthBit;
+    uint32_t    *p_preprocessedBlocks;
+    /*********************** PADDING ***********************/
+    inputLengthBit = p_input->l_data << 3;
+    // we need space for a '1' bit at the end of data
+    temp = UINT64_C(1) + p_input->l_data;
+    iterationsNeeded = temp / 64;
+    // check if there is enough space left to append the input length in bit
+    if((temp & MOD_NUM_64) <= 56)
+        iterationsNeeded++;
+    else
+        iterationsNeeded += 2;
+    // allocate enough memory (iterationsNeeded * 16 * sizeof(uint32_t))
+    p_preprocessedBlocks = malloc(iterationsNeeded << 6);
+    if(p_preprocessedBlocks == NULL)
+        return E_DIGEST_MEMALLOC;
+    // do not use memcpy to set preprocessed blocks, because big endian is required
+    for(i = 0; i < (p_input->l_data / 4); i++)
+    {
+        p_preprocessedBlocks[i] = (p_input->p_data[    (i << 2)] << 24)
+                                | (p_input->p_data[1 | (i << 2)] << 16)
+                                | (p_input->p_data[2 | (i << 2)] <<  8)
+                                | (p_input->p_data[3 | (i << 2)]);
+    }
+    // set '1' bit at the end of data
+    switch(p_input->l_data & MOD_NUM_4)
+    {
+        case 0: p_preprocessedBlocks[i] = 0x80000000;
+                break;
+        case 1: p_preprocessedBlocks[i] = (p_input->p_data[    (i << 2)] << 24)
+                                        | 0x00800000;
+                break;
+        case 2: p_preprocessedBlocks[i] = (p_input->p_data[    (i << 2)] << 24)
+                                        | (p_input->p_data[1 | (i << 2)] << 16)
+                                        | 0x00008000;
+                break;
+        case 3: p_preprocessedBlocks[i] = (p_input->p_data[    (i << 2)] << 24)
+                                        | (p_input->p_data[1 | (i << 2)] << 16)
+                                        | (p_input->p_data[2 | (i << 2)] <<  8)
+                                        | 0x00000080;
+    }
+    i++;
+    // do zero padding if needed
+    while((i & MOD_NUM_16) != 14)
+    {
+        p_preprocessedBlocks[i] = 0;
+        i++;
+    }
+    // append original message length
+    p_preprocessedBlocks[i    ] = inputLengthBit >> 32;
+    p_preprocessedBlocks[i + 1] = inputLengthBit & MOD_BIT_32;
+    /*******************************************************/
+    // initialize hash state with constants
+    p_result->a = SHA1_IV_0;
+    p_result->b = SHA1_IV_1;
+    p_result->c = SHA1_IV_2;
+    p_result->d = SHA1_IV_3;
+    p_result->e = SHA1_IV_4;
+    for(i = 0; i < iterationsNeeded; i++)
+    {
+        sha1Update((p_preprocessedBlocks + (i << 4)),
+                   p_result);
+    }
 
-    return err;
+    return 0;
 }
 /**
  * Function: sha1Update
- * 
- * TODO: add doc here
  */
 static void sha1Update
 (
-    char        *p_currInput,
+    uint32_t    *p_currChunk,
     struct hash *p_hashState
 )
 {
     static uint32_t a, b, c, d, e, temp;
            uint32_t p_blocks[16];
-    // TODO: split current input into blocks and calculate word like below
-    p_blocks[0] = (p_currInput[0] << 24)
-                | (p_currInput[1] << 16)
-                | (p_currInput[2] << 8)
-                | (p_currInput[3]);
+    // copy current chunk into word block array
+    memcpy(p_blocks,
+           p_currChunk,
+           64); /* 64 = 16 * sizeof(uint32_t) */
     // set state variables to current hash state
     a = p_hashState->a;
     b = p_hashState->b;
@@ -201,17 +258,4 @@ static void sha1Update
     p_hashState->c += c;
     p_hashState->d += d;
     p_hashState->e += e;
-}
-/**
- * Function: sha1Pad
- * 
- * TODO: add doc here
- */
-static inline void sha1Pad
-(
-    char     *p_input,
-    uint32_t *p_preprocessedBlocks
-)
-{
-
 }
