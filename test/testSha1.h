@@ -23,7 +23,7 @@
 
 struct sha1TestVec
 {
-    char *p_input;
+    char        *p_input;
     struct hash expectedResult;
 };
 

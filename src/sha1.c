@@ -40,12 +40,12 @@
 // macro for circular bitwise left-shift of a 32-bit word (taken from RFC 3174)
 #define LEFT_ROTATE(word, bits) (((word) << (bits)) | ((word) >> (32 - (bits))))
 // macro for word block expansion
-#define GEN_BLOCK(i)                                                                                              \
-    temp = (p_blocks[(i - 3) & 15] ^ p_blocks[(i - 8) & 15] ^ p_blocks[(i - 14) & 15] ^ p_blocks[(i - 16) & 15]); \
-    p_blocks[i & 15] = LEFT_ROTATE(temp, 1);
+#define GEN_BLOCK(i)                                                                                                          \
+    temp = (p_currChunk[(i - 3) & 15] ^ p_currChunk[(i - 8) & 15] ^ p_currChunk[(i - 14) & 15] ^ p_currChunk[(i - 16) & 15]); \
+    p_currChunk[i & 15] = LEFT_ROTATE(temp, 1);
 // macro for setting state variables in each round
-#define ROUND_PROCESSING(mA, mB, mC, mD, mE, f, k, i)     \
-    mE = k + mE + LEFT_ROTATE(mA, 5) + f + (p_blocks[i & 15]); \
+#define ROUND_PROCESSING(mA, mB, mC, mD, mE, f, k, i)             \
+    mE = k + mE + LEFT_ROTATE(mA, 5) + f + (p_currChunk[i & 15]); \
     mB = LEFT_ROTATE(mB, 30);
 // macros for the round functions
 #define ROUND_00_15(mA, mB, mC, mD, mE, i) \
@@ -154,11 +154,6 @@ static void sha1Update
 )
 {
     static uint32_t a, b, c, d, e, temp;
-           uint32_t p_blocks[16];
-    // copy current chunk into word block array
-    memcpy(p_blocks,
-           p_currChunk,
-           64); /* 64 = 16 * sizeof(uint32_t) */
     // set state variables to current hash state
     a = p_hashState->a;
     b = p_hashState->b;
