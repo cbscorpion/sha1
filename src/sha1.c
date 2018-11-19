@@ -143,6 +143,8 @@ int sha1Digest
         sha1Update((p_preprocessedBlocks + (i << 4)),
                    p_result);
     }
+    // pointer can not be NULL here
+    free(p_preprocessedBlocks);
 
     return 0;
 }
