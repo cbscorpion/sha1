@@ -64,7 +64,8 @@
     ROUND_PROCESSING(mA, mB, mC, mD, mE, F_REST(mB, mC, mD),  K_60_79, i)
 
 // function prototype
-static void sha1Update(uint32_t *p_currChunk, struct hash *p_hashState);
+static void sha1Update(uint32_t    *p_currChunk,
+                       struct hash *p_hashState);
 
 /**
  * Function: sha1Digest
@@ -90,7 +91,7 @@ int sha1Digest
         iterationsNeeded++;
     else
         iterationsNeeded += 2;
-    // allocate enough memory (iterationsNeeded * 16 * sizeof(uint32_t))
+    // allocate memory block with (iterationsNeeded * 16 * sizeof(uint32_t)) bytes
     p_preprocessedBlocks = malloc(iterationsNeeded << 6);
     if(p_preprocessedBlocks == NULL)
         return E_DIGEST_MEMALLOC;
@@ -136,6 +137,7 @@ int sha1Digest
     p_result->c = SHA1_IV_2;
     p_result->d = SHA1_IV_3;
     p_result->e = SHA1_IV_4;
+    // loop through iterations
     for(i = 0; i < iterationsNeeded; i++)
     {
         sha1Update((p_preprocessedBlocks + (i << 4)),

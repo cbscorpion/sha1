@@ -17,7 +17,8 @@
 #include "testSha1.h"
 
 // function prototype
-void printHashDiff(const struct hash *p_hashExpected, struct hash *p_hashReceived);
+void printHashDiff(const struct hash *p_hashExpected,
+                         struct hash *p_hashReceived);
 
 // test vectors
 const struct sha1TestVec testVectors[] = { { "ananas",
@@ -65,7 +66,8 @@ int main()
             printHashDiff(&(testVectors[i].expectedResult),
                           &result);
     }
-    printf("Passed %d/%d!\n", testsPassed, numberOfTests);
+    printf("Passed %d/%d!\n", testsPassed,
+                              numberOfTests);
 
 	return 0;
 }
@@ -78,6 +80,14 @@ void printHashDiff
           struct hash *p_hashReceived
 )
 {
-    printf("\nExpected: %08X %08X %08X %08X %08X\n", p_hashExpected->a, p_hashExpected->b, p_hashExpected->c, p_hashExpected->d, p_hashExpected->e);
-    printf("Received: %08X %08X %08X %08X %08X\n\n", p_hashReceived->a, p_hashReceived->b, p_hashReceived->c, p_hashReceived->d, p_hashReceived->e);
+    printf("\nExpected: %08X %08X %08X %08X %08X\n", p_hashExpected->a,
+                                                     p_hashExpected->b,
+                                                     p_hashExpected->c,
+                                                     p_hashExpected->d,
+                                                     p_hashExpected->e);
+    printf("Received: %08X %08X %08X %08X %08X\n\n", p_hashReceived->a,
+                                                     p_hashReceived->b,
+                                                     p_hashReceived->c,
+                                                     p_hashReceived->d,
+                                                     p_hashReceived->e);
 }

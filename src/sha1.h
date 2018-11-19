@@ -42,6 +42,7 @@ struct hash
 	uint32_t e;
 };
 
-extern int sha1Digest(struct buff *p_input, struct hash *p_result);
+extern int sha1Digest(struct buff *p_input,
+                      struct hash *p_result);
 
 #endif
